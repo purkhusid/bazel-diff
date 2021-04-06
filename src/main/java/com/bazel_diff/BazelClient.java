@@ -124,7 +124,9 @@ class BazelClientImpl implements BazelClient {
         cmd.add("--query_file");
         cmd.add(tempFile.toString());
 
-        ProcessBuilder pb = new ProcessBuilder(cmd).directory(workingDirectory.toFile());
+        File stdErr = File.createTempFile("bazel-diff", ".txt");
+
+        ProcessBuilder pb = new ProcessBuilder(cmd).redirectError(ProcessBuilder.Redirect.appendTo(stdErr)).directory(workingDirectory.toFile());
         Process process = pb.start();
         ArrayList<Build.Target> targets = new ArrayList<>();
         while (true) {
@@ -133,7 +135,12 @@ class BazelClientImpl implements BazelClient {
             targets.add(target);
         }
 
+        System.out.println("Stderr:");
+        System.out.println(new String(Files.readAllBytes(stdErr.toPath())));
+
+
         Files.delete(tempFile);
+        Files.delete(stdErr.toPath());
 
         return targets;
     }
